@@ -1,0 +1,895 @@
+// Main application — Lomas del Arroyo landing page
+
+const { useState, useMemo, useEffect } = React;
+
+const PRICE_ARS = 21_000_000;
+const PRICE_USD = 15_000;
+const DEFAULT_ENTREGA = 6_000_000;
+const MIN_ENTREGA = 5_000_000;
+const MAX_ENTREGA = 12_000_000;
+const STOCK_LOTES = 15;
+
+// Promo: 25% mayo / 10% junio (sólo pago contado en pesos)
+const PROMOS = {
+  mayo: { key: 'mayo', pct: 25, label: 'Mayo', note: '25% OFF · hasta el 31 de mayo' },
+  junio: { key: 'junio', pct: 10, label: 'Junio', note: '10% OFF · hasta el 30 de junio' },
+  sin: { key: 'sin', pct: 0, label: 'Lista', note: 'Precio de lista' }
+};
+const CURRENT_MONTH = new Date().getMonth();
+const DEFAULT_PROMO = CURRENT_MONTH === 5 ? 'junio' : 'mayo';
+
+/* ─────────────────────── NAV ─────────────────────── */
+function PromoBar() {
+  const items = [
+  'La Era del Peso · Edición 2026',
+  '25% OFF en mayo · pago contado en pesos',
+  '10% OFF en junio · pago contado en pesos',
+  'Solo 15 lotes con esta financiación',
+  'Financiación única en pesos · hasta 48 meses',
+  'Aceptamos criptomonedas · USDT · BTC'];
+
+  return (
+    <div className="relative z-50 bg-earth-800 text-cream-100 overflow-hidden border-b border-earth-800">
+      <div className="flex whitespace-nowrap py-2.5" style={{ animation: 'marquee 42s linear infinite', width: 'max-content' }}>
+        {[...items, ...items, ...items].map((t, i) =>
+        <span key={i} className="px-6 flex items-center gap-3 tracking-[0.15em] uppercase text-[10px]">
+            <span className="h-1 w-1 rounded-full bg-terracotta" />
+            {t}
+          </span>
+        )}
+      </div>
+      <style>{`@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-33.333%); } }`}</style>
+    </div>);
+
+}
+
+function Nav() {
+  return (
+    <header className="sticky top-0 z-40 backdrop-blur-md bg-cream-100/70 border-b border-earth-700/10">
+      <div className="max-w-7xl mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
+        <a href="#" className="flex items-center gap-3 text-earth-800">
+          <BrandMark size={28} />
+          <div className="leading-tight">
+            <div className="font-display text-lg">Estancia Paraíso</div>
+            <div className="text-[10px] tracking-[0.3em] uppercase text-earth-600 -mt-0.5">Urbanización sustentable</div>
+          </div>
+        </a>
+        <nav className="hidden md:flex items-center gap-9 text-sm text-earth-700">
+          <a href="#lugar" className="link-underline">El lugar</a>
+          <a href="#promo" className="link-underline text-terracotta">Promo Mayo</a>
+          <a href="#calculadora" className="link-underline">Calculadora</a>
+          <a href="#planes" className="link-underline">Planes</a>
+        </nav>
+      </div>
+    </header>);
+
+}
+
+/* ─────────────────────── HERO (stats strip) ─────────────────────── */
+function Hero() {
+  return (
+    <section className="relative">
+      <div className="border-y border-earth-700/15 bg-cream-50/50">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10 py-10 grid grid-cols-2 md:grid-cols-4 gap-y-8 gap-x-6">
+          <Stat value="24h" label="Seguridad" sub="Ingreso controlado" />
+          <Stat value="48" label="Cuotas máx." sub="Financiación propia" />
+          <Stat value="100%" label="Servicios" sub="Luz · agua · caminos" />
+          <Stat value="100%" label="Bonificados" sub="Honorarios y mensura" />
+        </div>
+      </div>
+    </section>);
+
+}
+
+/* ─────────────────────── EL LUGAR ─────────────────────── */
+function ElLugar() {
+  return (
+    <section id="lugar" className="py-24 lg:py-32">
+      <div className="max-w-7xl mx-auto px-6 lg:px-10">
+        <SectionHeader
+          kicker="01 · El lugar"
+          title="Un espacio pensado para volver a mirar el cielo."
+          lead="Barrio privado en Estancia Grande, sobre la ruta a Concordia, Entre Ríos. Para quienes quieran disfrutar la vida desde lo simple y conectarse profundamente con los sentidos." />
+        
+
+        <div className="mt-16 grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <img
+            src="https://estanciaparaiso.com.ar/wp-content/uploads/2022/07/estancia-paraiso-2022_web.jpg"
+            alt="Estancia Paraíso — vista aérea"
+            className="lg:col-span-7 w-full h-full object-cover rounded-md"
+            style={{ aspectRatio: '16/10', display: 'block' }} />
+          
+          <div className="lg:col-span-5 flex flex-col gap-6">
+            <img
+              src="https://estanciaparaiso.com.ar/wp-content/uploads/2022/07/Estancia-Paraiso-familias-01.jpg"
+              alt="Familias en Estancia Paraíso"
+              className="w-full object-cover rounded-md"
+              style={{ aspectRatio: '4/3', display: 'block' }} />
+            
+            <div className="bg-cream-50 border border-earth-700/15 rounded-md p-7">
+              <div className="font-display text-2xl text-earth-800 leading-snug">
+                "La calidez de un hogar, el aroma a madera, la brisa fresca, el olor a tierra y el rocío de la mañana."
+              </div>
+              <div className="mt-4 text-sm text-earth-600">— Estancia Paraíso · Estancia Grande</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Features row */}
+        <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-10">
+          {[
+          { t: "Energía y agua", d: "Energía eléctrica a pie de lote y red de agua corriente provista al barrio." },
+          { t: "Seguridad 24hs", d: "Cerco perimetral completo, ingreso controlado y vigilancia las 24 horas." },
+          { t: "Accesos", d: "Caminos internos consolidados todo el año y acceso directo desde la ruta." }].
+          map((f, i) =>
+          <div key={i} className="border-t border-earth-700/20 pt-6">
+              <div className="text-[10px] tracking-[0.3em] uppercase text-earth-600">0{i + 1}</div>
+              <h3 className="font-display text-2xl text-earth-800 mt-3">{f.t}</h3>
+              <p className="mt-3 text-earth-700/80 leading-relaxed">{f.d}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </section>);
+
+}
+
+/* ─────────────────────── LA OPORTUNIDAD ─────────────────────── */
+function Manifiesto() {
+  return (
+    <section className="relative pt-12 pb-10 lg:pt-20 lg:pb-16 overflow-hidden">
+      <div className="max-w-7xl mx-auto px-6 lg:px-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
+
+          {/* LEFT — manifiesto text */}
+          <div className="lg:col-span-7 relative">
+            <div className="inline-flex items-center gap-3 text-earth-600">
+              <span className="h-px w-10 bg-earth-600/50" />
+              <span className="text-[10px] tracking-[0.3em] uppercase">Manifiesto</span>
+            </div>
+
+            <blockquote className="font-display mt-6 text-[40px] md:text-[56px] lg:text-[72px] leading-[1.02] text-earth-800 tracking-tight">
+              <span className="font-display-italic text-terracotta">“</span>La tierra no se devalúa,<br />
+              <span className="font-display-italic text-sage-600">no se va a ningún lado</span><br />
+              y nunca pierde su valor.<span className="font-display-italic text-terracotta">”</span>
+            </blockquote>
+
+            <p className="mt-6 max-w-xl text-earth-700/80 text-base lg:text-lg leading-relaxed">
+              Es la inversión más antigua del mundo por una razón:
+              <span className="text-earth-800 font-medium"> siempre funciona.</span>
+            </p>
+
+            <div className="mt-6 inline-flex items-center gap-3 text-earth-600">
+              <span className="h-px w-16 bg-earth-600/30" />
+              <span className="text-[10px] tracking-[0.3em] uppercase text-earth-700">Estancia Paraíso · Concordia · Entre Ríos</span>
+            </div>
+
+            <div className="mt-8 flex flex-wrap items-center gap-4">
+              <CTA as="a" href="#calculadora">Calcular mi cuota</CTA>
+              <CTA dark={false} as="a" href="#lugar">Conocer el lugar</CTA>
+            </div>
+
+            {/* Mobile promo strip — visible only on small screens */}
+            <a
+              href="#promo"
+              className="md:hidden mt-8 inline-flex items-center gap-3 bg-terracotta text-cream-50 pl-3 pr-5 py-2.5 rounded-full shadow-[0_10px_30px_-10px_rgba(184,105,74,0.6)]">
+              
+              <span className="flex items-center justify-center w-7 h-7 rounded-full bg-cream-50 text-terracotta font-display text-base leading-none">25</span>
+              <span className="text-[11px] tracking-[0.2em] uppercase font-medium">Mayo 25% OFF · La Era del Peso</span>
+              <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M1 7h12M8 2l5 5-5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </a>
+          </div>
+
+          {/* RIGHT — image + price card + animated promo badge */}
+          <div className="lg:col-span-5">
+            <div className="relative">
+              <img
+                src="https://estanciaparaiso.com.ar/wp-content/uploads/2022/07/laguna-estancia-paraiso-01-1.jpg"
+                alt="Laguna de Estancia Paraíso"
+                className="w-full h-full object-cover rounded-md"
+                style={{ aspectRatio: '4/5', display: 'block' }} />
+              
+
+              {/* Animated promo badge — centered on image */}
+              <a
+                href="#promo"
+                aria-label="Promoción de mayo — 25% OFF"
+                className="promo-badge group hidden md:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[160px] h-[160px] lg:w-[200px] lg:h-[200px] items-center justify-center z-10">
+                
+                <span className="promo-badge-ring absolute inset-0">
+                  <svg viewBox="0 0 200 200" className="w-full h-full">
+                    <defs>
+                      <path id="promo-circle" d="M 100,100 m -78,0 a 78,78 0 1,1 156,0 a 78,78 0 1,1 -156,0" />
+                    </defs>
+                    <text fill="currentColor" className="text-cream-50" style={{ fontSize: 13, letterSpacing: '0.28em', fontFamily: 'DM Sans, sans-serif', fontWeight: 500, textTransform: 'uppercase' }}>
+                      <textPath href="#promo-circle" startOffset="0">
+                        Mayo 25% OFF • La Era del Peso • Mayo 25% OFF • La Era del Peso •&nbsp;
+                      </textPath>
+                    </text>
+                  </svg>
+                </span>
+                <span className="promo-badge-core relative flex flex-col items-center justify-center bg-terracotta text-cream-50 rounded-full w-[100px] h-[100px] lg:w-[120px] lg:h-[120px] shadow-[0_20px_50px_-10px_rgba(184,105,74,0.8)] transition-transform duration-500 group-hover:scale-110">
+                  <span className="font-display text-4xl lg:text-5xl leading-none">25</span>
+                  <span className="text-[10px] tracking-[0.25em] mt-1 opacity-90">% MAYO</span>
+                  <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-cream-50 animate-ping" />
+                  <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-cream-50" />
+                </span>
+              </a>
+
+              <div className="absolute -bottom-6 -left-6 bg-cream-50 border border-earth-700/15 rounded-md p-5 shadow-[0_10px_40px_-20px_rgba(74,56,38,0.4)] max-w-[240px]">
+                <div className="text-[10px] tracking-[0.3em] uppercase text-earth-600">Desde</div>
+                <div className="font-display text-4xl text-earth-800 mt-1">USD 15.000</div>
+                <div className="text-sm text-earth-700/80 mt-1">o {ARS(PRICE_ARS)} en pesos</div>
+                <div className="hairline mt-3 pt-3 text-xs text-earth-700/70">Financiación propia hasta 48 meses</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        .promo-badge-ring { animation: promo-spin 14s linear infinite; color: rgb(74 56 38); }
+        @keyframes promo-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .promo-badge:hover .promo-badge-ring { animation-duration: 5s; }
+        @keyframes promo-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+        .promo-badge { animation: promo-float 5s ease-in-out infinite; }
+      `}</style>
+    </section>);
+
+}
+
+function LaOportunidad() {
+  return (
+    <section id="inversion" className="relative py-24 lg:py-32 bg-earth-700 text-cream-100 overflow-hidden">
+      {/* decorative line */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-cream-200/15" />
+      <div className="max-w-7xl mx-auto px-6 lg:px-10 relative">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          <div className="lg:col-span-5">
+            <img
+              src="https://estanciaparaiso.com.ar/wp-content/uploads/2022/07/Estancia-Paraiso-familias-08.jpg"
+              alt="Atardecer en Estancia Paraíso"
+              className="w-full object-cover rounded-md"
+              style={{ aspectRatio: '4/5', display: 'block' }} />
+            
+          </div>
+          <div className="lg:col-span-7">
+            <div className="flex items-center gap-3 text-cream-200/70">
+              <span className="h-px w-10 bg-cream-200/40" />
+              <span className="text-[10px] tracking-[0.3em] uppercase">02 · La oportunidad</span>
+            </div>
+            <h2 className="font-display mt-6 text-4xl md:text-6xl leading-[1.05] text-cream-50">
+              Comprás tierra,<br />
+              <span className="font-display-italic text-cream-200">no una promesa.</span>
+            </h2>
+            <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-5 text-cream-100/85 leading-relaxed">
+              <p>
+                Comprás directo al dueño, sin intermediarios, sin comisiones.
+                Reservás con seña, firmás boleto el mismo día y el lote queda a tu nombre.
+              </p>
+              <p>
+                El valor del suelo en zonas rurales productivas creció en promedio
+                un <span className="text-cream-50 font-medium">38% anual en dólares</span> los últimos
+                cinco años. Estancia Paraíso está en la franja inicial de ese ciclo.
+              </p>
+            </div>
+
+            <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-y-8">
+              <div>
+                <div className="font-display text-4xl text-cream-50">+38%</div>
+                <div className="text-[10px] tracking-[0.3em] uppercase mt-2 text-cream-200/70">Valorización anual<br />en USD (2020–25)</div>
+              </div>
+              <div>
+                <div className="font-display text-4xl text-cream-50">12×</div>
+                <div className="text-[10px] tracking-[0.3em] uppercase mt-2 text-cream-200/70">Cuotas fijas<br />en pesos</div>
+              </div>
+              <div>
+                <div className="font-display text-4xl text-cream-50">48m</div>
+                <div className="text-[10px] tracking-[0.3em] uppercase mt-2 text-cream-200/70">Plazo máximo<br />ajustado IPC</div>
+              </div>
+              <div>
+                <div className="font-display text-4xl text-cream-50">0%</div>
+                <div className="text-[10px] tracking-[0.3em] uppercase mt-2 text-cream-200/70">Interés bancario<br />financiación propia</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>);
+
+}
+
+/* ─────────────────────── PROMOCIÓN ─────────────────────── */
+function Promocion() {
+  const isMay = CURRENT_MONTH === 4;
+  const isJun = CURRENT_MONTH === 5;
+  const activeMonth = isJun ? 'junio' : 'mayo';
+  const activePct = PROMOS[activeMonth].pct;
+
+  const precioLista = PRICE_ARS;
+  const precioMayo = Math.round(PRICE_ARS * 0.75);
+  const precioJunio = Math.round(PRICE_ARS * 0.90);
+
+  return (
+    <section id="promo" className="relative py-20 lg:py-28 bg-cream-100">
+      <div className="max-w-7xl mx-auto px-6 lg:px-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-stretch">
+          {/* LEFT — headline + lot counter */}
+          <div className="lg:col-span-7">
+            {/* Slogan eyebrow */}
+            <div className="inline-flex items-center gap-3 mb-6 bg-earth-800 text-cream-50 pl-3 pr-4 py-2 rounded-full">
+              <span className="h-1.5 w-1.5 rounded-full bg-terracotta animate-pulse" />
+              <span className="text-[10px] tracking-[0.35em] uppercase font-medium">La Era del Peso</span>
+              <span className="text-[10px] tracking-[0.2em] uppercase text-cream-200/60">Edición 2026</span>
+            </div>
+
+            <div className="flex items-center gap-3 text-terracotta">
+              <span className="h-px w-10 bg-terracotta/60" />
+              <span className="text-[10px] tracking-[0.3em] uppercase">Promoción limitada · Mayo & Junio 2026</span>
+            </div>
+            <h2 className="font-display mt-6 text-5xl md:text-6xl lg:text-7xl leading-[1.02] text-earth-800">
+              Solo <span className="font-display-italic text-terracotta">15 lotes</span><br />
+              con esta financiación.
+            </h2>
+            <p className="mt-6 text-earth-700/80 text-lg max-w-xl leading-relaxed">
+              Una franja única: lista de unidades cerrada, descuentos sólo en mayo y junio para pago
+              contado en pesos, y financiación propia en pesos hasta 48 meses para el resto.
+              <span className="block mt-2 text-earth-800">Cuando se cierren las 15, el precio vuelve a lista.</span>
+            </p>
+
+            {/* lot counter — 15 unidades */}
+            <div className="mt-10 grid gap-1.5 max-w-md" style={{ gridTemplateColumns: 'repeat(15, 1fr)' }}>
+              {Array.from({ length: 15 }).map((_, i) =>
+              <div
+                key={i}
+                className={`h-12 rounded-sm ${i < 11 ? 'bg-earth-700' : 'bg-cream-200 border border-earth-700/20'}`}
+                title={i < 11 ? 'Disponible' : 'Reservado'} />
+
+              )}
+            </div>
+            <div className="mt-3 flex items-center justify-between max-w-md text-xs text-earth-700/70">
+              <span><span className="text-earth-800 font-medium">11 disponibles</span> · 4 reservados</span>
+              <span>Stock al {new Date().toLocaleDateString('es-AR', { day: '2-digit', month: 'long' })}</span>
+            </div>
+
+            <div className="mt-10 flex flex-wrap items-center gap-3">
+              <CTA as="a" href="https://wa.me/5493454340639">Reservar mi unidad</CTA>
+              <a href="#calculadora" className="text-sm text-earth-700 link-underline">o calcular mi cuota →</a>
+            </div>
+          </div>
+
+          {/* RIGHT — two month cards */}
+          <div className="lg:col-span-5 flex flex-col gap-4">
+            <div className={`rounded-md p-7 border ${activeMonth === 'mayo' ? 'bg-earth-700 text-cream-50 border-earth-700 shadow-[0_30px_60px_-40px_rgba(74,56,38,0.6)]' : 'bg-cream-50 text-earth-800 border-earth-700/15'}`}>
+              <div className="flex items-center justify-between">
+                <div className={`text-[10px] tracking-[0.3em] uppercase ${activeMonth === 'mayo' ? 'text-cream-200/70' : 'text-earth-600'}`}>Mayo 2026</div>
+                <span className={`text-[10px] tracking-[0.2em] uppercase px-2.5 py-1 rounded-full ${activeMonth === 'mayo' ? 'bg-cream-50/15 text-cream-100' : 'bg-terracotta/15 text-terracotta'}`}>
+                  {activeMonth === 'mayo' ? 'Mes en curso' : 'Cerrado'}
+                </span>
+              </div>
+              <div className="mt-4 flex items-baseline gap-3 flex-wrap">
+                <span className="font-display text-6xl leading-none">25%</span>
+                <span className={`text-sm ${activeMonth === 'mayo' ? 'text-cream-200/80' : 'text-earth-700/70'}`}>de descuento</span>
+              </div>
+              <div className={`mt-4 text-sm ${activeMonth === 'mayo' ? 'text-cream-100/85' : 'text-earth-700/80'}`}>
+                Precio promocional <span className={activeMonth === 'mayo' ? 'text-cream-50 font-medium' : 'text-earth-800 font-medium'}>{ARS(precioMayo)}</span>
+                <span className={`mx-2 ${activeMonth === 'mayo' ? 'text-cream-200/50' : 'text-earth-600/50'} line-through`}>{ARS(precioLista)}</span>
+              </div>
+              <div className={`mt-2 text-xs ${activeMonth === 'mayo' ? 'text-cream-200/60' : 'text-earth-600/70'}`}>Pago contado en pesos · hasta el 31 de mayo</div>
+            </div>
+
+            <div className={`rounded-md p-7 border ${activeMonth === 'junio' ? 'bg-earth-700 text-cream-50 border-earth-700 shadow-[0_30px_60px_-40px_rgba(74,56,38,0.6)]' : 'bg-cream-50 text-earth-800 border-earth-700/15'}`}>
+              <div className="flex items-center justify-between">
+                <div className={`text-[10px] tracking-[0.3em] uppercase ${activeMonth === 'junio' ? 'text-cream-200/70' : 'text-earth-600'}`}>Junio 2026</div>
+                <span className={`text-[10px] tracking-[0.2em] uppercase px-2.5 py-1 rounded-full ${activeMonth === 'junio' ? 'bg-cream-50/15 text-cream-100' : 'bg-earth-700/10 text-earth-700'}`}>
+                  {activeMonth === 'junio' ? 'Mes en curso' : 'Próximo'}
+                </span>
+              </div>
+              <div className="mt-4 flex items-baseline gap-3 flex-wrap">
+                <span className="font-display text-6xl leading-none">10%</span>
+                <span className={`text-sm ${activeMonth === 'junio' ? 'text-cream-200/80' : 'text-earth-700/70'}`}>de descuento</span>
+              </div>
+              <div className={`mt-4 text-sm ${activeMonth === 'junio' ? 'text-cream-100/85' : 'text-earth-700/80'}`}>
+                Precio promocional <span className={activeMonth === 'junio' ? 'text-cream-50 font-medium' : 'text-earth-800 font-medium'}>{ARS(precioJunio)}</span>
+                <span className={`mx-2 ${activeMonth === 'junio' ? 'text-cream-200/50' : 'text-earth-600/50'} line-through`}>{ARS(precioLista)}</span>
+              </div>
+              <div className={`mt-2 text-xs ${activeMonth === 'junio' ? 'text-cream-200/60' : 'text-earth-600/70'}`}>Pago contado en pesos · hasta el 30 de junio</div>
+            </div>
+
+            {/* crypto card */}
+            <div className="rounded-md p-6 border border-earth-700/15 bg-cream-50 flex items-center gap-5">
+              <div className="flex -space-x-2">
+                <div className="h-11 w-11 rounded-full bg-[#F7931A] flex items-center justify-center text-cream-50 font-bold text-sm border-2 border-cream-50">₿</div>
+                <div className="h-11 w-11 rounded-full bg-[#26A17B] flex items-center justify-center text-cream-50 font-bold text-xs border-2 border-cream-50">USDT</div>
+                <div className="h-11 w-11 rounded-full bg-earth-700 flex items-center justify-center text-cream-50 font-bold text-xs border-2 border-cream-50">+</div>
+              </div>
+              <div className="flex-1">
+                <div className="text-[10px] tracking-[0.3em] uppercase text-earth-600">También consultar por</div>
+                <div className="font-display text-xl text-earth-800 mt-0.5">Pago en criptomonedas</div>
+                <div className="text-xs text-earth-700/70 mt-0.5">USDT · BTC · Coordinamos al momento de reservar.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>);
+
+}
+
+/* ─────────────────────── CALCULATOR ─────────────────────── */
+function Calculator() {
+  const [entrega, setEntrega] = useState(DEFAULT_ENTREGA);
+  const [activeTerm, setActiveTerm] = useState(12);
+
+  const saldo = Math.max(0, PRICE_ARS - entrega);
+  const cuotaFija12 = saldo / 12;
+  const cuota24 = saldo / 24;
+  const cuota36 = saldo / 36;
+  const cuota48 = saldo / 48;
+
+  const terms = [
+  { months: 12, value: cuotaFija12, type: 'fija', label: 'Cuota fija en pesos', note: 'Sin ajustes hasta el último vencimiento.' },
+  { months: 24, value: cuota24, type: 'ipc', label: 'Cuota ajustable IPC', note: 'Se actualiza mes a mes por inflación oficial.' },
+  { months: 36, value: cuota36, type: 'ipc', label: 'Cuota ajustable IPC', note: 'Más plazo, menos esfuerzo mensual.' },
+  { months: 48, value: cuota48, type: 'ipc', label: 'Cuota ajustable IPC', note: 'Plan más largo · cuota inicial mínima.' }];
+
+
+  const active = terms.find((t) => t.months === activeTerm);
+  const pct = entrega / PRICE_ARS * 100;
+
+  return (
+    <section id="calculadora" className="py-24 lg:py-32">
+      <div className="max-w-7xl mx-auto px-6 lg:px-10">
+        <SectionHeader
+          kicker="03 · Calculadora"
+          title="Armá tu plan en treinta segundos."
+          lead="Movés la entrega, elegís el plazo, y ves la cuota exacta. Sin letra chica." />
+        
+
+        <div className="mt-16 grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* CONTROLS */}
+          <div className="lg:col-span-5 bg-cream-50 border border-earth-700/15 rounded-md p-8 lg:p-10">
+            <div className="flex items-baseline justify-between">
+              <div className="text-[10px] tracking-[0.3em] uppercase text-earth-600">Valor del lote</div>
+              <div className="text-sm text-earth-700/70">USD 15.000</div>
+            </div>
+            <div className="font-display text-5xl text-earth-800 mt-1">{ARS(PRICE_ARS)}</div>
+
+            <div className="hairline my-8" />
+
+            <label className="block">
+              <div className="flex items-baseline justify-between">
+                <div className="text-[10px] tracking-[0.3em] uppercase text-earth-600">Tu entrega</div>
+                <div className="text-xs text-earth-700/70">{pct.toFixed(0)}% del total</div>
+              </div>
+              <div className="mt-2 flex items-baseline gap-3">
+                <span className="font-display text-4xl text-earth-800">{ARS(entrega)}</span>
+              </div>
+              <input
+                type="range"
+                className="earth-slider w-full mt-5"
+                min={MIN_ENTREGA}
+                max={MAX_ENTREGA}
+                step={100_000}
+                value={entrega}
+                onChange={(e) => setEntrega(Number(e.target.value))} />
+              
+              <div className="flex justify-between text-[10px] tracking-[0.2em] uppercase text-earth-600/70 mt-2">
+                <span>Mín. {ARS(MIN_ENTREGA)}</span>
+                <span>Máx. {ARS(MAX_ENTREGA)}</span>
+              </div>
+            </label>
+
+            <div className="mt-6 flex flex-wrap gap-2">
+              {[6_000_000, 6_500_000, 8_000_000, 10_500_000].map((v) =>
+              <button
+                key={v}
+                onClick={() => setEntrega(v)}
+                className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
+                entrega === v ?
+                'bg-earth-700 text-cream-50 border-earth-700' :
+                'bg-cream-100 text-earth-700 border-earth-700/20 hover:bg-cream-200'}`
+                }>
+                
+                  {ARS(v)}
+                </button>
+              )}
+            </div>
+
+            <div className="hairline my-8" />
+
+            <div className="flex items-baseline justify-between">
+              <div className="text-[10px] tracking-[0.3em] uppercase text-earth-600">Saldo a financiar</div>
+              <div className="text-xs text-earth-700/70">{(100 - pct).toFixed(0)}% restante</div>
+            </div>
+            <div className="font-display text-3xl text-earth-700 mt-1">{ARS(saldo)}</div>
+          </div>
+
+          {/* RESULTS */}
+          <div className="lg:col-span-7">
+            {/* Term selector */}
+            <div className="grid grid-cols-4 gap-2 bg-cream-200/60 p-1.5 rounded-full border border-earth-700/10">
+              {terms.map((t) =>
+              <button
+                key={t.months}
+                onClick={() => setActiveTerm(t.months)}
+                className={`relative py-2.5 rounded-full text-sm transition-all duration-300 ${
+                activeTerm === t.months ?
+                'bg-earth-700 text-cream-50 shadow-sm' :
+                'text-earth-700 hover:bg-cream-100'}`
+                }>
+                
+                  {t.months} meses
+                </button>
+              )}
+            </div>
+
+            {/* Active card */}
+            <div className="mt-6 bg-earth-700 text-cream-50 rounded-md p-10 lg:p-12 relative overflow-hidden">
+              <div className="flex items-center gap-2">
+                <Tag tone="dark">{active.type === 'fija' ? 'Cuota fija' : 'Ajuste IPC'}</Tag>
+                <span className="text-[10px] tracking-[0.3em] uppercase text-cream-200/70">Plazo {active.months} meses</span>
+              </div>
+              <div className="mt-6 text-cream-200/80 text-sm">Tu cuota mensual estimada</div>
+              <div className="mt-2 flex items-baseline gap-3 flex-wrap">
+                <span className="font-display text-6xl md:text-7xl text-cream-50 leading-none">{ARS(active.value)}</span>
+                <span className="text-cream-200/70 text-sm">/ mes</span>
+              </div>
+              <div className="mt-4 text-cream-100/85 max-w-md">{active.note}</div>
+
+              <div className="hairline mt-10 border-cream-200/20" style={{ borderColor: 'rgba(235,224,201,0.2)' }} />
+              <div className="mt-6 grid grid-cols-3 gap-6 text-sm">
+                <div>
+                  <div className="text-[10px] tracking-[0.3em] uppercase text-cream-200/60">Entrega</div>
+                  <div className="font-display text-2xl text-cream-50 mt-1">{ARS(entrega)}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] tracking-[0.3em] uppercase text-cream-200/60">Saldo</div>
+                  <div className="font-display text-2xl text-cream-50 mt-1">{ARS(saldo)}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] tracking-[0.3em] uppercase text-cream-200/60">Total estimado</div>
+                  <div className="font-display text-2xl text-cream-50 mt-1">
+                    {active.type === 'fija' ? ARS(entrega + active.value * active.months) : 'Variable IPC'}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* All terms quick view */}
+            <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2">
+              {terms.map((t) =>
+              <button
+                key={t.months}
+                onClick={() => setActiveTerm(t.months)}
+                className={`text-left bg-cream-50 border rounded-md p-4 transition-all ${
+                activeTerm === t.months ? 'border-earth-700' : 'border-earth-700/15 hover:border-earth-700/40'}`
+                }>
+                
+                  <div className="text-[10px] tracking-[0.3em] uppercase text-earth-600">{t.months}m · {t.type === 'fija' ? 'Fija' : 'IPC'}</div>
+                  <div className="font-display text-xl text-earth-800 mt-1.5 leading-tight">{ARS(t.value)}</div>
+                  <div className="text-[11px] text-earth-700/60 mt-0.5">por mes</div>
+                </button>
+              )}
+            </div>
+
+            <p className="mt-6 text-xs text-earth-700/60 leading-relaxed">
+              * Los planes de 24, 36 y 48 meses se ajustan mensualmente por el Índice de Precios al Consumidor (IPC) publicado por INDEC.
+              El plan de 12 meses es de cuota fija en pesos sin ajustes ni intereses. Sujeto a disponibilidad y aprobación.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>);
+
+}
+
+/* ─────────────────────── COMPARISON TABLE ─────────────────────── */
+function Planes() {
+  const isMay = CURRENT_MONTH === 4;
+  const promoLabel = isMay ? 'Mayo 25% OFF' : 'Junio 10% OFF';
+  const promoPct = isMay ? 25 : 10;
+  const contadoPrice = Math.round(PRICE_ARS * (1 - promoPct / 100));
+
+  const plans = [
+  {
+    key: 'contado',
+    name: 'Contado en pesos',
+    tag: promoLabel,
+    tone: 'sage',
+    headline: ARS(contadoPrice),
+    headlineSub: 'Lista ' + ARS(PRICE_ARS) + ' · ' + promoPct + '% OFF',
+    bullet: 'Pago contado en pesos durante ' + (isMay ? 'mayo' : 'junio') + ' · también en criptomonedas',
+    rows: [
+    ['Entrega', '100% al firmar'],
+    ['Cuotas', '—'],
+    ['Ajuste', 'Ninguno'],
+    ['Boleto', 'Inmediato'],
+    ['Escritura y mensura', 'Inmediata'],
+    ['Descuento', promoPct + '% sobre lista']],
+
+    cta: 'Reservar al precio promo'
+  },
+  {
+    key: 'corto',
+    name: 'Financiado · Corto plazo',
+    tag: 'Único en pesos',
+    tone: 'dark',
+    headline: ARS(1_250_000),
+    headlineSub: 'cuota fija · 12 meses · sin descuento',
+    bullet: 'Entrega ' + ARS(6_000_000) + ' + 12 cuotas fijas en pesos. Una de las 15 unidades de La Era del Peso.',
+    rows: [
+    ['Entrega', ARS(6_000_000)],
+    ['Cuotas', '12 mensuales'],
+    ['Ajuste', 'Ninguno · cuota fija'],
+    ['Boleto', 'Al firmar'],
+    ['Escritura', 'Al cancelar'],
+    ['Descuento', '—']],
+
+    cta: 'Reservar mi lote',
+    featured: true
+  },
+  {
+    key: 'largo',
+    name: 'Financiado · Largo plazo',
+    tag: '15 unidades',
+    tone: 'earth',
+    headline: ARS(302_083),
+    headlineSub: 'desde · 48 meses IPC · sin descuento',
+    bullet: 'Entrega ' + ARS(6_500_000) + ' + 24, 36 o 48 cuotas ajustables IPC. Cupo limitado a la lista cerrada.',
+    rows: [
+    ['Entrega', ARS(6_500_000)],
+    ['Cuotas', '24 / 36 / 48 meses'],
+    ['Ajuste', 'Mensual por IPC'],
+    ['Boleto', 'Al firmar'],
+    ['Escritura', 'Al cancelar'],
+    ['Descuento', '—']],
+
+    cta: 'Simular largo plazo'
+  }];
+
+
+  return (
+    <section id="planes" className="py-24 lg:py-32 bg-cream-50/60 border-y border-earth-700/10">
+      <div className="max-w-7xl mx-auto px-6 lg:px-10">
+        <SectionHeader
+          kicker="04 · Planes de pago"
+          title="Tres caminos para llegar al mismo lugar."
+          lead="Elegí lo que se acomoda a tu liquidez. Todos los planes se firman ante escribano y el lote queda a tu nombre desde el boleto." />
+        
+
+        <div className="mt-16 grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {plans.map((p) => {
+            const featured = p.featured;
+            return (
+              <div
+                key={p.key}
+                className={`relative rounded-md p-8 lg:p-10 flex flex-col ${
+                featured ?
+                'bg-earth-700 text-cream-50 border border-earth-700 lg:-mt-4 lg:mb-0 shadow-[0_30px_60px_-40px_rgba(74,56,38,0.6)]' :
+                'bg-cream-50 text-earth-800 border border-earth-700/15'}`
+                }>
+                
+                <div className="flex items-center justify-between">
+                  <div className={`text-[10px] tracking-[0.3em] uppercase ${featured ? 'text-cream-200/70' : 'text-earth-600'}`}>{p.name}</div>
+                  <span className={`text-[10px] tracking-[0.2em] uppercase px-2.5 py-1 rounded-full ${
+                  featured ? 'bg-cream-50/15 text-cream-100' : p.tone === 'sage' ? 'bg-sage-400/20 text-sage-700' : 'bg-earth-700/10 text-earth-700'}`
+                  }>{p.tag}</span>
+                </div>
+
+                <div className="mt-8">
+                  <div className={`font-display text-5xl lg:text-6xl leading-none ${featured ? 'text-cream-50' : 'text-earth-800'}`}>{p.headline}</div>
+                  <div className={`mt-2 text-sm ${featured ? 'text-cream-200/80' : 'text-earth-700/70'}`}>{p.headlineSub}</div>
+                </div>
+
+                <div className={`mt-6 text-sm leading-relaxed ${featured ? 'text-cream-100/90' : 'text-earth-700/80'}`}>
+                  {p.bullet}
+                </div>
+
+                <div className={`my-8 ${featured ? 'border-t border-cream-200/20' : 'hairline'}`} />
+
+                <dl className="space-y-3 text-sm">
+                  {p.rows.map(([k, v]) =>
+                  <div key={k} className="flex justify-between gap-4">
+                      <dt className={featured ? 'text-cream-200/70' : 'text-earth-600'}>{k}</dt>
+                      <dd className={`text-right ${featured ? 'text-cream-50' : 'text-earth-800'}`}>{v}</dd>
+                    </div>
+                  )}
+                </dl>
+
+                <div className="mt-10">
+                  <a
+                    href="https://wa.me/5493454340639"
+                    className={`inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-sm tracking-wide transition-colors ${
+                    featured ?
+                    'bg-cream-50 text-earth-700 hover:bg-cream-100' :
+                    'bg-earth-700 text-cream-50 hover:bg-earth-800'}`
+                    }>
+                    
+                    {p.cta}
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 7h12M8 2l5 5-5 5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  </a>
+                </div>
+              </div>);
+
+          })}
+        </div>
+
+        {/* Detailed comparison table */}
+        <div className="mt-16 overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left">
+                <th className="py-4 pr-4 text-[10px] tracking-[0.3em] uppercase text-earth-600 font-normal w-1/4">Detalle</th>
+                {plans.map((p) =>
+                <th key={p.key} className="py-4 px-4 text-[10px] tracking-[0.3em] uppercase text-earth-600 font-normal">
+                    {p.name}
+                  </th>
+                )}
+              </tr>
+            </thead>
+            <tbody>
+              {[
+              ['Precio total estimado', ARS(contadoPrice) + ' · ' + promoPct + '% OFF', ARS(21_000_000), 'USD 15.000 + IPC'],
+              ['Entrega inicial', '100%', ARS(6_000_000), ARS(6_500_000)],
+              ['Cantidad de cuotas', '—', '12', '24 / 36 / 48'],
+              ['Tipo de cuota', '—', 'Fija en pesos', 'Ajuste IPC mensual'],
+              ['Posesión', 'Inmediata', 'Inmediata', 'Inmediata'],
+              ['Escritura y mensura', 'Inmediata', 'Al cancelar', 'Al cancelar'],
+              ['Reserva', ARS(500_000), ARS(500_000), ARS(500_000)]].
+              map((row, i) =>
+              <tr key={i} className="border-t border-earth-700/10">
+                  <td className="py-4 pr-4 text-earth-700">{row[0]}</td>
+                  {row.slice(1).map((cell, j) =>
+                <td key={j} className={`py-4 px-4 ${j === 1 ? 'text-earth-800 font-medium' : 'text-earth-700'}`}>{cell}</td>
+                )}
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>);
+
+}
+
+/* ─────────────────────── GALLERY ─────────────────────── */
+function Gallery() {
+  return (
+    <section className="py-24 lg:py-32">
+      <div className="max-w-7xl mx-auto px-6 lg:px-10">
+        <div className="flex flex-wrap items-end justify-between gap-6">
+          <SectionHeader
+            kicker="05 · Galería"
+            title="Cuatro estaciones, el mismo arroyo." />
+          
+          <div className="text-sm text-earth-700/70 max-w-xs">
+            Las fotografías son reales y sin edición. Subí las tuyas arrastrándolas a cada cuadro.
+          </div>
+        </div>
+
+        <div className="mt-14 grid grid-cols-12 gap-4">
+          <img src="https://estanciaparaiso.com.ar/wp-content/uploads/2022/07/Estancia-Paraiso-familias-03.jpg" alt="Familias" className="col-span-12 md:col-span-5 w-full object-cover rounded-md" style={{ aspectRatio: '4/5', display: 'block' }} />
+          <img src="https://estanciaparaiso.com.ar/wp-content/uploads/2022/07/Estancia-Paraiso-familias-04.jpg" alt="Vida en el barrio" className="col-span-12 md:col-span-7 w-full object-cover rounded-md" style={{ aspectRatio: '16/10', display: 'block' }} />
+          <img src="https://estanciaparaiso.com.ar/wp-content/uploads/2022/07/Estancia-Paraiso-familias-05.jpg" alt="Paisaje del lote" className="col-span-12 md:col-span-7 w-full object-cover rounded-md" style={{ aspectRatio: '16/10', display: 'block' }} />
+          <img src="https://estanciaparaiso.com.ar/wp-content/uploads/2022/07/Estancia-Paraiso-familias-06.jpg" alt="Naturaleza" className="col-span-12 md:col-span-5 w-full object-cover rounded-md" style={{ aspectRatio: '4/5', display: 'block' }} />
+        </div>
+      </div>
+    </section>);
+
+}
+
+const MOODS = [
+{ key: 'tierra', label: 'Tierra cálida', swatches: ['#4A3826', '#F5EEDF', '#6E7656'], hint: 'Cremas, marrón profundo y verde sauce.' },
+{ key: 'atardecer', label: 'Atardecer', swatches: ['#4F261F', '#F7E8D5', '#E06E40'], hint: 'Terracotas tibios, cobre y rosa palo.' },
+{ key: 'bosque', label: 'Bosque', swatches: ['#252F18', '#EBE9D7', '#647254'], hint: 'Musgo, oliva y cremas fríos.' },
+{ key: 'bruma', label: 'Bruma', swatches: ['#2F2F29', '#E8E5DB', '#646E5C'], hint: 'Piedra caliza, sage seco y carbón.' }];
+
+const TYPES = [
+{ value: 'editorial', label: 'Editorial' },
+{ value: 'boutique', label: 'Boutique' },
+{ value: 'austera', label: 'Austera' }];
+
+const RHYTHMS = [
+{ value: 'compacto', label: 'Compacto' },
+{ value: 'holgado', label: 'Holgado' },
+{ value: 'cinemascope', label: 'Cinemascope' }];
+
+function MoodPicker({ value, onChange }) {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6 }}>
+      {MOODS.map((m) => {
+        const active = value === m.key;
+        return (
+          <button
+            key={m.key}
+            type="button"
+            onClick={() => onChange(m.key)}
+            title={m.hint}
+            style={{
+              appearance: 'none',
+              padding: '7px 8px',
+              border: active ? '1px solid rgba(0,0,0,0.55)' : '0.5px solid rgba(0,0,0,0.12)',
+              boxShadow: active ?
+                '0 0 0 2px rgba(255,255,255,0.9) inset, 0 1px 6px rgba(0,0,0,0.10)' :
+                '0 1px 0 rgba(255,255,255,0.5) inset',
+              borderRadius: 8,
+              background: 'rgba(255,255,255,0.55)',
+              color: '#29261b',
+              cursor: 'pointer',
+              textAlign: 'left',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 6
+            }}>
+            <div style={{ display: 'flex', gap: 3 }}>
+              {m.swatches.map((s, i) =>
+                <span
+                  key={i}
+                  style={{
+                    width: '100%', height: 18, borderRadius: 4,
+                    background: s, border: '0.5px solid rgba(0,0,0,0.08)'
+                  }} />
+              )}
+            </div>
+            <span style={{ fontSize: 10.5, fontWeight: 500 }}>{m.label}</span>
+          </button>);
+      })}
+    </div>);
+}
+
+function Tweaks() {
+  const defaults = typeof window !== 'undefined' && window.TWEAK_DEFAULTS ||
+  { mood: 'tierra', type: 'editorial', rhythm: 'holgado' };
+  const [t, setTweak] = useTweaks(defaults);
+
+  React.useEffect(() => {
+    const root = document.documentElement;
+    root.dataset.mood = t.mood || 'tierra';
+    root.dataset.type = t.type || 'editorial';
+    root.dataset.rhythm = t.rhythm || 'holgado';
+  }, [t.mood, t.type, t.rhythm]);
+
+  return (
+    <TweaksPanel>
+      <TweakSection label="Atmósfera" />
+      <MoodPicker value={t.mood} onChange={(v) => setTweak('mood', v)} />
+
+      <TweakSection label="Tipografía de display" />
+      <TweakRadio
+        label="Familia"
+        value={t.type}
+        options={TYPES}
+        onChange={(v) => setTweak('type', v)} />
+      
+
+      <TweakSection label="Ritmo editorial" />
+      <TweakRadio
+        label="Composición"
+        value={t.rhythm}
+        options={RHYTHMS}
+        onChange={(v) => setTweak('rhythm', v)} />
+      
+    </TweaksPanel>);
+
+}
+
+function App() {
+  return (
+    <>
+      <PromoBar />
+      <Nav />
+      <Manifiesto />
+      <Hero />
+      <Promocion />
+      <ElLugar />
+      <LaOportunidad />
+      <Calculator />
+      <Planes />
+      <Gallery />
+      <Tweaks />
+    </>);
+
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
