@@ -60,6 +60,7 @@ function Nav() {
           <a href="#calculadora" className="link-underline">Calculadora</a>
           <a href="#planes" className="link-underline">Planes</a>
         </nav>
+        <CTA dark={false} as="a" href="#contacto">Reservar visita</CTA>
       </div>
     </header>);
 
@@ -779,6 +780,123 @@ function Gallery() {
 
 }
 
+/* ───────────────────── CONTACT / FOOTER ───────────────────── */
+function Contacto() {
+  const channels = [
+    {
+      name: 'Instagram',
+      handle: '@estancia_paraiso_',
+      href: 'https://www.instagram.com/estancia_paraiso_/',
+      cta: 'Ver Instagram',
+      bg: 'bg-gradient-to-br from-[#F58529] via-[#DD2A7B] to-[#8134AF]',
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className="w-6 h-6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>
+      ),
+    },
+    {
+      name: 'Facebook',
+      handle: '/EstanciaParaiso',
+      href: 'https://www.facebook.com/Estancia-Paraiso-131428373990355/',
+      cta: 'Ver Facebook',
+      bg: 'bg-[#1877F2]',
+      icon: (
+        <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15h-2.4v-3H10V9.5C10 7.57 11.57 6 13.5 6H16v3h-1.5c-.55 0-1 .45-1 1V12H16l-.5 3h-2v6.95C18.05 21.45 22 17.19 22 12z"/></svg>
+      ),
+    },
+    {
+      name: 'YouTube',
+      handle: '@Estanciaparaisoconcordia',
+      href: 'https://www.youtube.com/@Estanciaparaisoconcordia',
+      cta: 'Ver canal',
+      bg: 'bg-[#FF0000]',
+      icon: (
+        <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6"><path d="M23 7s-.2-1.5-.9-2.2c-.8-.9-1.8-.9-2.2-1C16.8 3.5 12 3.5 12 3.5s-4.8 0-7.9.3c-.4.1-1.4.1-2.2 1C1.2 5.5 1 7 1 7S.8 8.8.8 10.6v1.7C.8 14.1 1 16 1 16s.2 1.5.9 2.2c.8.9 1.9.8 2.4.9 1.7.2 7.7.3 7.7.3s4.8 0 7.9-.3c.4-.1 1.4-.1 2.2-1 .7-.7.9-2.2.9-2.2s.2-1.8.2-3.6v-1.7C23.2 8.8 23 7 23 7zM9.7 14.4V8L16 11.2l-6.3 3.2z"/></svg>
+      ),
+    },
+  ];
+
+  return (
+    <section id="contacto" className="relative bg-earth-800 text-cream-100 py-24 lg:py-32">
+      <div className="max-w-7xl mx-auto px-6 lg:px-10 grid grid-cols-1 lg:grid-cols-12 gap-12">
+        <div className="lg:col-span-5">
+          <div className="flex items-center gap-3 text-cream-200/70">
+            <span className="h-px w-10 bg-cream-200/40" />
+            <span className="text-[10px] tracking-[0.3em] uppercase">06 · Hablemos</span>
+          </div>
+          <h2 className="font-display mt-6 text-5xl md:text-6xl text-cream-50 leading-[1.05]">
+            Vení a caminar el lote.<br/>
+            <span className="font-display-italic text-cream-200">El paisaje convence solo.</span>
+          </h2>
+          <p className="mt-6 text-cream-100/80 max-w-md leading-relaxed">
+            Coordinamos visitas guiadas. Seguí la cuenta o escribinos por las redes
+            y arreglamos el día y la hora.
+          </p>
+          <div className="mt-10 space-y-3 text-sm">
+            <div className="flex items-center gap-3"><span className="text-[10px] tracking-[0.3em] uppercase text-cream-200/60 w-24">Ubicación</span>Estancia Grande · Concordia · Entre Ríos</div>
+            <div className="flex items-center gap-3"><span className="text-[10px] tracking-[0.3em] uppercase text-cream-200/60 w-24">Pagos</span>Pesos · USDT · BTC</div>
+          </div>
+        </div>
+
+        <div className="lg:col-span-7">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {channels.map((c) => (
+              <a
+                key={c.name}
+                href={c.href}
+                target={c.href.startsWith('http') ? '_blank' : undefined}
+                rel="noopener"
+                className="group relative bg-cream-50 text-earth-800 rounded-md p-6 flex items-start gap-4 hover:-translate-y-0.5 transition-transform duration-300 border border-cream-50"
+              >
+                <div className={`w-12 h-12 rounded-full ${c.bg} text-cream-50 flex items-center justify-center shrink-0`}>
+                  {c.icon}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[10px] tracking-[0.3em] uppercase text-earth-600">{c.name}</div>
+                  <div className="font-display text-2xl text-earth-800 mt-1 leading-tight truncate">{c.handle}</div>
+                  <div className="mt-3 inline-flex items-center gap-1.5 text-xs text-earth-700 link-underline">
+                    {c.cta}
+                    <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M1 7h12M8 2l5 5-5 5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </div>
+                </div>
+              </a>
+            ))}
+
+            <a
+              href="https://estanciaparaiso.com.ar/tour-360/"
+              target="_blank"
+              rel="noopener"
+              className="md:col-span-2 group relative bg-earth-700 text-cream-50 rounded-md p-6 flex items-center gap-4 hover:bg-earth-800 transition-colors"
+            >
+              <div className="w-12 h-12 rounded-full bg-cream-50/15 flex items-center justify-center shrink-0">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className="w-6 h-6"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
+              </div>
+              <div className="flex-1">
+                <div className="text-[10px] tracking-[0.3em] uppercase text-cream-200/70">Recorrido virtual</div>
+                <div className="font-display text-2xl text-cream-50 mt-1 leading-tight">Tour 360° por la estancia</div>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 14 14" fill="none"><path d="M1 7h12M8 2l5 5-5 5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-24 border-t border-cream-200/15">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10 py-8 flex flex-wrap items-center justify-between gap-4 text-xs text-cream-200/60">
+          <div className="flex items-center gap-3">
+            <BrandMark size={20} />
+            <span className="font-display text-base text-cream-100">Estancia Paraíso</span>
+            <span>· Barrio privado · Estancia Grande, Entre Ríos</span>
+          </div>
+          <div className="flex gap-6">
+            <a href="https://estanciaparaiso.com.ar/master-plan-2/" target="_blank" rel="noopener" className="link-underline">Master Plan</a>
+            <a href="https://estanciaparaiso.com.ar/tour-360/" target="_blank" rel="noopener" className="link-underline">Tour 360°</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 const MOODS = [
 { key: 'tierra', label: 'Tierra cálida', swatches: ['#4A3826', '#F5EEDF', '#6E7656'], hint: 'Cremas, marrón profundo y verde sauce.' },
 { key: 'atardecer', label: 'Atardecer', swatches: ['#4F261F', '#F7E8D5', '#E06E40'], hint: 'Terracotas tibios, cobre y rosa palo.' },
@@ -887,6 +1005,7 @@ function App() {
       <Calculator />
       <Planes />
       <Gallery />
+      <Contacto />
       <Tweaks />
     </>);
 
