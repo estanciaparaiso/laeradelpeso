@@ -1,31 +1,36 @@
-// Main application — Lomas del Arroyo landing page
+// Main application — Estancia Paraíso · La Era del Peso (oferta 15 días · 60 cuotas)
 
 const { useState, useMemo, useEffect } = React;
 
 const PRICE_ARS = 21_000_000;
 const PRICE_USD = 15_000;
-const DEFAULT_ENTREGA = 6_000_000;
+const DEFAULT_ENTREGA = 5_000_000;
 const MIN_ENTREGA = 5_000_000;
 const MAX_ENTREGA = 12_000_000;
 const STOCK_LOTES = 15;
 
-// Promo: 25% mayo / 10% junio (sólo pago contado en pesos)
-const PROMOS = {
-  mayo: { key: 'mayo', pct: 25, label: 'Mayo', note: '25% OFF · hasta el 31 de mayo' },
-  junio: { key: 'junio', pct: 10, label: 'Junio', note: '10% OFF · hasta el 30 de junio' },
-  sin: { key: 'sin', pct: 0, label: 'Lista', note: 'Precio de lista' }
-};
-const CURRENT_MONTH = new Date().getMonth();
-const DEFAULT_PROMO = CURRENT_MONTH === 5 ? 'junio' : 'mayo';
+const MAX_CUOTAS = 60;
+
+// Oferta por 15 días (sin fechas visibles). Para relanzar, cambiar OFFER_END.
+// El contador "quedan X días" se calcula contra esta fecha fija (no se reinicia por visitante).
+const OFFER_DAYS = 15;
+const OFFER_END = new Date('2026-11-02T23:59:59-03:00');
+const PROMO_PCT = 25; // descuento sólo pago contado en pesos
+const DIAS_RESTANTES = Math.max(0, Math.ceil((OFFER_END - new Date()) / 86_400_000));
+const OFERTA_ACTIVA = DIAS_RESTANTES > 0;
+const QUEDAN_TXT = OFERTA_ACTIVA
+  ? (DIAS_RESTANTES === 1 ? 'Último día' : `Quedan ${DIAS_RESTANTES} días`)
+  : 'Oferta finalizada';
 
 /* ─────────────────────── NAV ─────────────────────── */
 function PromoBar() {
   const items = [
   'La Era del Peso · Edición 2026',
-  '25% OFF en mayo · pago contado en pesos',
-  '10% OFF en junio · pago contado en pesos',
+  'Oferta válida por 15 días · ' + QUEDAN_TXT,
+  PROMO_PCT + '% OFF · pago contado en pesos',
+  'Entrega mínima ' + ARS(MIN_ENTREGA),
+  'Financiación única en pesos · hasta 60 cuotas',
   'Solo 15 lotes con esta financiación',
-  'Financiación única en pesos · hasta 48 meses',
   'Aceptamos criptomonedas · USDT · BTC'];
 
   return (
@@ -56,7 +61,7 @@ function Nav() {
         </a>
         <nav className="hidden md:flex items-center gap-9 text-sm text-earth-700">
           <a href="#lugar" className="link-underline">El lugar</a>
-          <a href="#promo" className="link-underline text-terracotta">Promo Mayo</a>
+          <a href="#promo" className="link-underline text-terracotta">Oferta 15 días</a>
           <a href="#calculadora" className="link-underline">Calculadora</a>
           <a href="#planes" className="link-underline">Planes</a>
         </nav>
@@ -73,7 +78,7 @@ function Hero() {
       <div className="border-y border-earth-700/15 bg-cream-50/50">
         <div className="max-w-7xl mx-auto px-6 lg:px-10 py-10 grid grid-cols-2 md:grid-cols-4 gap-y-8 gap-x-6">
           <Stat value="24h" label="Seguridad" sub="Ingreso controlado" />
-          <Stat value="48" label="Cuotas máx." sub="Financiación propia" />
+          <Stat value="60" label="Cuotas máx." sub="Financiación propia" />
           <Stat value="100%" label="Servicios" sub="Luz · agua · caminos" />
           <Stat value="100%" label="Bonificados" sub="Honorarios y mensura" />
         </div>
@@ -175,8 +180,8 @@ function Manifiesto() {
               href="#promo"
               className="md:hidden mt-8 inline-flex items-center gap-3 bg-terracotta text-cream-50 pl-3 pr-5 py-2.5 rounded-full shadow-[0_10px_30px_-10px_rgba(184,105,74,0.6)]">
               
-              <span className="flex items-center justify-center w-7 h-7 rounded-full bg-cream-50 text-terracotta font-display text-base leading-none">25</span>
-              <span className="text-[11px] tracking-[0.2em] uppercase font-medium">Mayo 25% OFF · La Era del Peso</span>
+              <span className="flex items-center justify-center w-7 h-7 rounded-full bg-cream-50 text-terracotta font-display text-base leading-none">60</span>
+              <span className="text-[11px] tracking-[0.2em] uppercase font-medium">60 cuotas · Oferta 15 días</span>
               <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M1 7h12M8 2l5 5-5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </a>
           </div>
@@ -194,7 +199,7 @@ function Manifiesto() {
               {/* Animated promo badge — centered on image */}
               <a
                 href="#promo"
-                aria-label="Promoción de mayo — 25% OFF"
+                aria-label="Oferta por 15 días — hasta 60 cuotas"
                 className="promo-badge group hidden md:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[160px] h-[160px] lg:w-[200px] lg:h-[200px] items-center justify-center z-10">
                 
                 <span className="promo-badge-ring absolute inset-0">
@@ -204,14 +209,14 @@ function Manifiesto() {
                     </defs>
                     <text fill="currentColor" className="text-cream-50" style={{ fontSize: 13, letterSpacing: '0.28em', fontFamily: 'DM Sans, sans-serif', fontWeight: 500, textTransform: 'uppercase' }}>
                       <textPath href="#promo-circle" startOffset="0">
-                        Mayo 25% OFF • La Era del Peso • Mayo 25% OFF • La Era del Peso •&nbsp;
+                        60 cuotas • Oferta 15 días • 60 cuotas • Oferta 15 días •&nbsp;
                       </textPath>
                     </text>
                   </svg>
                 </span>
                 <span className="promo-badge-core relative flex flex-col items-center justify-center bg-terracotta text-cream-50 rounded-full w-[100px] h-[100px] lg:w-[120px] lg:h-[120px] shadow-[0_20px_50px_-10px_rgba(184,105,74,0.8)] transition-transform duration-500 group-hover:scale-110">
-                  <span className="font-display text-4xl lg:text-5xl leading-none">25</span>
-                  <span className="text-[10px] tracking-[0.25em] mt-1 opacity-90">% MAYO</span>
+                  <span className="font-display text-4xl lg:text-5xl leading-none">60</span>
+                  <span className="text-[10px] tracking-[0.25em] mt-1 opacity-90">CUOTAS</span>
                   <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-cream-50 animate-ping" />
                   <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-cream-50" />
                 </span>
@@ -221,7 +226,7 @@ function Manifiesto() {
                 <div className="text-[10px] tracking-[0.3em] uppercase text-earth-600">Desde</div>
                 <div className="font-display text-4xl text-earth-800 mt-1">USD 15.000</div>
                 <div className="text-sm text-earth-700/80 mt-1">o {ARS(PRICE_ARS)} en pesos</div>
-                <div className="hairline mt-3 pt-3 text-xs text-earth-700/70">Financiación propia hasta 48 meses</div>
+                <div className="hairline mt-3 pt-3 text-xs text-earth-700/70">Entrega desde {ARS(MIN_ENTREGA)} · hasta 60 cuotas</div>
               </div>
             </div>
           </div>
@@ -285,7 +290,7 @@ function LaOportunidad() {
                 <div className="text-[10px] tracking-[0.3em] uppercase mt-2 text-cream-200/70">Cuotas fijas<br />en pesos</div>
               </div>
               <div>
-                <div className="font-display text-4xl text-cream-50">48m</div>
+                <div className="font-display text-4xl text-cream-50">60m</div>
                 <div className="text-[10px] tracking-[0.3em] uppercase mt-2 text-cream-200/70">Plazo máximo<br />ajustado IPC</div>
               </div>
               <div>
@@ -302,14 +307,9 @@ function LaOportunidad() {
 
 /* ─────────────────────── PROMOCIÓN ─────────────────────── */
 function Promocion() {
-  const isMay = CURRENT_MONTH === 4;
-  const isJun = CURRENT_MONTH === 5;
-  const activeMonth = isJun ? 'junio' : 'mayo';
-  const activePct = PROMOS[activeMonth].pct;
-
   const precioLista = PRICE_ARS;
-  const precioMayo = Math.round(PRICE_ARS * 0.75);
-  const precioJunio = Math.round(PRICE_ARS * 0.90);
+  const precioPromo = Math.round(PRICE_ARS * (1 - PROMO_PCT / 100));
+  const cuota60 = Math.round((PRICE_ARS - MIN_ENTREGA) / 60);
 
   return (
     <section id="promo" className="relative py-20 lg:py-28 bg-cream-100">
@@ -326,16 +326,16 @@ function Promocion() {
 
             <div className="flex items-center gap-3 text-terracotta">
               <span className="h-px w-10 bg-terracotta/60" />
-              <span className="text-[10px] tracking-[0.3em] uppercase">Promoción limitada · Mayo & Junio 2026</span>
+              <span className="text-[10px] tracking-[0.3em] uppercase">Oferta válida por 15 días · {QUEDAN_TXT}</span>
             </div>
             <h2 className="font-display mt-6 text-5xl md:text-6xl lg:text-7xl leading-[1.02] text-earth-800">
               Solo <span className="font-display-italic text-terracotta">15 lotes</span><br />
               con esta financiación.
             </h2>
             <p className="mt-6 text-earth-700/80 text-lg max-w-xl leading-relaxed">
-              Una franja única: lista de unidades cerrada, descuentos sólo en mayo y junio para pago
-              contado en pesos, y financiación propia en pesos hasta 48 meses para el resto.
-              <span className="block mt-2 text-earth-800">Cuando se cierren las 15, el precio vuelve a lista.</span>
+              Una franja única: lista de unidades cerrada, entrega mínima de {ARS(MIN_ENTREGA)} y
+              financiación propia en pesos hasta 60 cuotas. Pago contado en pesos con {PROMO_PCT}% de descuento.
+              <span className="block mt-2 text-earth-800">Oferta válida por 15 días o hasta cerrar las 15 unidades, lo que ocurra primero.</span>
             </p>
 
             {/* lot counter — 15 unidades */}
@@ -361,40 +361,35 @@ function Promocion() {
 
           {/* RIGHT — two month cards */}
           <div className="lg:col-span-5 flex flex-col gap-4">
-            <div className={`rounded-md p-7 border ${activeMonth === 'mayo' ? 'bg-earth-700 text-cream-50 border-earth-700 shadow-[0_30px_60px_-40px_rgba(74,56,38,0.6)]' : 'bg-cream-50 text-earth-800 border-earth-700/15'}`}>
+            <div className="rounded-md p-7 border bg-earth-700 text-cream-50 border-earth-700 shadow-[0_30px_60px_-40px_rgba(74,56,38,0.6)]">
               <div className="flex items-center justify-between">
-                <div className={`text-[10px] tracking-[0.3em] uppercase ${activeMonth === 'mayo' ? 'text-cream-200/70' : 'text-earth-600'}`}>Mayo 2026</div>
-                <span className={`text-[10px] tracking-[0.2em] uppercase px-2.5 py-1 rounded-full ${activeMonth === 'mayo' ? 'bg-cream-50/15 text-cream-100' : 'bg-terracotta/15 text-terracotta'}`}>
-                  {activeMonth === 'mayo' ? 'Mes en curso' : 'Cerrado'}
-                </span>
+                <div className="text-[10px] tracking-[0.3em] uppercase text-cream-200/70">Financiación · hasta 60 cuotas</div>
+                <span className="text-[10px] tracking-[0.2em] uppercase px-2.5 py-1 rounded-full bg-cream-50/15 text-cream-100">Nuevo</span>
               </div>
               <div className="mt-4 flex items-baseline gap-3 flex-wrap">
-                <span className="font-display text-6xl leading-none">25%</span>
-                <span className={`text-sm ${activeMonth === 'mayo' ? 'text-cream-200/80' : 'text-earth-700/70'}`}>de descuento</span>
+                <span className="font-display text-5xl leading-none">{ARS(MIN_ENTREGA)}</span>
+                <span className="text-sm text-cream-200/80">de entrega mínima</span>
               </div>
-              <div className={`mt-4 text-sm ${activeMonth === 'mayo' ? 'text-cream-100/85' : 'text-earth-700/80'}`}>
-                Precio promocional <span className={activeMonth === 'mayo' ? 'text-cream-50 font-medium' : 'text-earth-800 font-medium'}>{ARS(precioMayo)}</span>
-                <span className={`mx-2 ${activeMonth === 'mayo' ? 'text-cream-200/50' : 'text-earth-600/50'} line-through`}>{ARS(precioLista)}</span>
+              <div className="mt-4 text-sm text-cream-100/85">
+                + 60 cuotas desde <span className="text-cream-50 font-medium">{ARS(cuota60)}</span> / mes
               </div>
-              <div className={`mt-2 text-xs ${activeMonth === 'mayo' ? 'text-cream-200/60' : 'text-earth-600/70'}`}>Pago contado en pesos · hasta el 31 de mayo</div>
+              <div className="mt-2 text-xs text-cream-200/60">Cuotas en pesos ajustables por IPC · {QUEDAN_TXT}</div>
             </div>
 
-            <div className={`rounded-md p-7 border ${activeMonth === 'junio' ? 'bg-earth-700 text-cream-50 border-earth-700 shadow-[0_30px_60px_-40px_rgba(74,56,38,0.6)]' : 'bg-cream-50 text-earth-800 border-earth-700/15'}`}>
+            <div className="rounded-md p-7 border bg-cream-50 text-earth-800 border-earth-700/15">
               <div className="flex items-center justify-between">
-                <div className={`text-[10px] tracking-[0.3em] uppercase ${activeMonth === 'junio' ? 'text-cream-200/70' : 'text-earth-600'}`}>Junio 2026</div>
-                <span className={`text-[10px] tracking-[0.2em] uppercase px-2.5 py-1 rounded-full ${activeMonth === 'junio' ? 'bg-cream-50/15 text-cream-100' : 'bg-earth-700/10 text-earth-700'}`}>
-                  {activeMonth === 'junio' ? 'Mes en curso' : 'Próximo'}
-                </span>
+                <div className="text-[10px] tracking-[0.3em] uppercase text-earth-600">Pago contado en pesos</div>
+                <span className="text-[10px] tracking-[0.2em] uppercase px-2.5 py-1 rounded-full bg-terracotta/15 text-terracotta">Oferta 15 días</span>
               </div>
               <div className="mt-4 flex items-baseline gap-3 flex-wrap">
-                <span className="font-display text-6xl leading-none">10%</span>
-                <span className={`text-sm ${activeMonth === 'junio' ? 'text-cream-200/80' : 'text-earth-700/70'}`}>de descuento</span>
+                <span className="font-display text-6xl leading-none">{PROMO_PCT}%</span>
+                <span className="text-sm text-earth-700/70">de descuento</span>
               </div>
-              <div className={`mt-4 text-sm ${activeMonth === 'junio' ? 'text-cream-100/85' : 'text-earth-700/80'}`}>
-                Precio promocional <span className={activeMonth === 'junio' ? 'text-cream-50 font-medium' : 'text-earth-800 font-medium'}>{ARS(precioJunio)}</span>
-                <span className={`mx-2 ${activeMonth === 'junio' ? 'text-cream-200/50' : 'text-earth-600/50'} line-through`}>{ARS(precioLista)}</span>
+              <div className="mt-4 text-sm text-earth-700/80">
+                Precio promocional <span className="text-earth-800 font-medium">{ARS(precioPromo)}</span>
+                <span className="mx-2 text-earth-600/50 line-through">{ARS(precioLista)}</span>
               </div>
-              <div className={`mt-2 text-xs ${activeMonth === 'junio' ? 'text-cream-200/60' : 'text-earth-600/70'}`}>Pago contado en pesos · hasta el 30 de junio</div>
+              <div className="mt-2 text-xs text-earth-600/70">Válido por 15 días · {QUEDAN_TXT}</div>
             </div>
 
             {/* crypto card */}
@@ -427,12 +422,14 @@ function Calculator() {
   const cuota24 = saldo / 24;
   const cuota36 = saldo / 36;
   const cuota48 = saldo / 48;
+  const cuota60 = saldo / 60;
 
   const terms = [
   { months: 12, value: cuotaFija12, type: 'fija', label: 'Cuota fija en pesos', note: 'Sin ajustes hasta el último vencimiento.' },
   { months: 24, value: cuota24, type: 'ipc', label: 'Cuota ajustable IPC', note: 'Se actualiza mes a mes por inflación oficial.' },
   { months: 36, value: cuota36, type: 'ipc', label: 'Cuota ajustable IPC', note: 'Más plazo, menos esfuerzo mensual.' },
-  { months: 48, value: cuota48, type: 'ipc', label: 'Cuota ajustable IPC', note: 'Plan más largo · cuota inicial mínima.' }];
+  { months: 48, value: cuota48, type: 'ipc', label: 'Cuota ajustable IPC', note: 'Más plazo, cuota más liviana.' },
+  { months: 60, value: cuota60, type: 'ipc', label: 'Cuota ajustable IPC', note: 'Plan más largo · cuota inicial mínima. Nuevo.' }];
 
 
   const active = terms.find((t) => t.months === activeTerm);
@@ -482,7 +479,7 @@ function Calculator() {
             </label>
 
             <div className="mt-6 flex flex-wrap gap-2">
-              {[6_000_000, 6_500_000, 8_000_000, 10_500_000].map((v) =>
+              {[5_000_000, 6_500_000, 8_000_000, 10_500_000].map((v) =>
               <button
                 key={v}
                 onClick={() => setEntrega(v)}
@@ -509,7 +506,7 @@ function Calculator() {
           {/* RESULTS */}
           <div className="lg:col-span-7">
             {/* Term selector */}
-            <div className="grid grid-cols-4 gap-2 bg-cream-200/60 p-1.5 rounded-full border border-earth-700/10">
+            <div className="grid grid-cols-5 gap-1 sm:gap-2 bg-cream-200/60 p-1.5 rounded-full border border-earth-700/10">
               {terms.map((t) =>
               <button
                 key={t.months}
@@ -520,7 +517,7 @@ function Calculator() {
                 'text-earth-700 hover:bg-cream-100'}`
                 }>
                 
-                  {t.months} meses
+                  {t.months}<span className="hidden sm:inline"> meses</span><span className="sm:hidden">m</span>
                 </button>
               )}
             </div>
@@ -558,7 +555,7 @@ function Calculator() {
             </div>
 
             {/* All terms quick view */}
-            <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2">
+            <div className="mt-4 grid grid-cols-2 md:grid-cols-5 gap-2">
               {terms.map((t) =>
               <button
                 key={t.months}
@@ -575,8 +572,8 @@ function Calculator() {
             </div>
 
             <p className="mt-6 text-xs text-earth-700/60 leading-relaxed">
-              * Los planes de 24, 36 y 48 meses se ajustan mensualmente por el Índice de Precios al Consumidor (IPC) publicado por INDEC.
-              El plan de 12 meses es de cuota fija en pesos sin ajustes ni intereses. Sujeto a disponibilidad y aprobación.
+              * Los planes de 24, 36, 48 y 60 meses se ajustan mensualmente por el Índice de Precios al Consumidor (IPC) publicado por INDEC.
+              El plan de 12 meses es de cuota fija en pesos sin ajustes ni intereses. Entrega mínima {ARS(MIN_ENTREGA)}. Oferta válida por 15 días. Sujeto a disponibilidad y aprobación.
             </p>
           </div>
         </div>
@@ -587,9 +584,9 @@ function Calculator() {
 
 /* ─────────────────────── COMPARISON TABLE ─────────────────────── */
 function Planes() {
-  const isMay = CURRENT_MONTH === 4;
-  const promoLabel = isMay ? 'Mayo 25% OFF' : 'Junio 10% OFF';
-  const promoPct = isMay ? 25 : 10;
+  const promoLabel = PROMO_PCT + '% OFF · 15 días';
+  const promoPct = PROMO_PCT;
+  const saldoMin = PRICE_ARS - MIN_ENTREGA;
   const contadoPrice = Math.round(PRICE_ARS * (1 - promoPct / 100));
 
   const plans = [
@@ -600,7 +597,7 @@ function Planes() {
     tone: 'sage',
     headline: ARS(contadoPrice),
     headlineSub: 'Lista ' + ARS(PRICE_ARS) + ' · ' + promoPct + '% OFF',
-    bullet: 'Pago contado en pesos durante ' + (isMay ? 'mayo' : 'junio') + ' · también en criptomonedas',
+    bullet: 'Pago contado en pesos dentro de los 15 días de la oferta · también en criptomonedas',
     rows: [
     ['Entrega', '100% al firmar'],
     ['Cuotas', '—'],
@@ -616,11 +613,11 @@ function Planes() {
     name: 'Financiado · Corto plazo',
     tag: 'Único en pesos',
     tone: 'dark',
-    headline: ARS(1_250_000),
+    headline: ARS(Math.round(saldoMin / 12)),
     headlineSub: 'cuota fija · 12 meses · sin descuento',
-    bullet: 'Entrega ' + ARS(6_000_000) + ' + 12 cuotas fijas en pesos. Una de las 15 unidades de La Era del Peso.',
+    bullet: 'Entrega ' + ARS(MIN_ENTREGA) + ' + 12 cuotas fijas en pesos. Una de las 15 unidades de La Era del Peso.',
     rows: [
-    ['Entrega', ARS(6_000_000)],
+    ['Entrega', 'Desde ' + ARS(MIN_ENTREGA)],
     ['Cuotas', '12 mensuales'],
     ['Ajuste', 'Ninguno · cuota fija'],
     ['Boleto', 'Al firmar'],
@@ -633,14 +630,14 @@ function Planes() {
   {
     key: 'largo',
     name: 'Financiado · Largo plazo',
-    tag: '15 unidades',
+    tag: 'Hasta 60 cuotas',
     tone: 'earth',
-    headline: ARS(302_083),
-    headlineSub: 'desde · 48 meses IPC · sin descuento',
-    bullet: 'Entrega ' + ARS(6_500_000) + ' + 24, 36 o 48 cuotas ajustables IPC. Cupo limitado a la lista cerrada.',
+    headline: ARS(Math.round(saldoMin / 60)),
+    headlineSub: 'desde · 60 meses IPC · sin descuento',
+    bullet: 'Entrega ' + ARS(MIN_ENTREGA) + ' + 24, 36, 48 o 60 cuotas ajustables IPC. Cupo limitado a la lista cerrada.',
     rows: [
-    ['Entrega', ARS(6_500_000)],
-    ['Cuotas', '24 / 36 / 48 meses'],
+    ['Entrega', 'Desde ' + ARS(MIN_ENTREGA)],
+    ['Cuotas', '24 / 36 / 48 / 60 meses'],
     ['Ajuste', 'Mensual por IPC'],
     ['Boleto', 'Al firmar'],
     ['Escritura', 'Al cancelar'],
@@ -732,8 +729,8 @@ function Planes() {
             <tbody>
               {[
               ['Precio total estimado', ARS(contadoPrice) + ' · ' + promoPct + '% OFF', ARS(21_000_000), 'USD 15.000 + IPC'],
-              ['Entrega inicial', '100%', ARS(6_000_000), ARS(6_500_000)],
-              ['Cantidad de cuotas', '—', '12', '24 / 36 / 48'],
+              ['Entrega inicial', '100%', 'Desde ' + ARS(MIN_ENTREGA), 'Desde ' + ARS(MIN_ENTREGA)],
+              ['Cantidad de cuotas', '—', '12', '24 / 36 / 48 / 60'],
               ['Tipo de cuota', '—', 'Fija en pesos', 'Ajuste IPC mensual'],
               ['Posesión', 'Inmediata', 'Inmediata', 'Inmediata'],
               ['Escritura y mensura', 'Inmediata', 'Al cancelar', 'Al cancelar'],

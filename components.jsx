@@ -71,7 +71,7 @@ function SectionHeader({ kicker, title, lead }) {
 }
 
 // Primary CTA
-function CTA({ children, dark = true, as = "button", href, onClick }) {
+function CTA({ children, dark = true, as = "button", href, onClick, target, rel }) {
   const cls = dark
     ? "bg-earth-700 text-cream-50 hover:bg-earth-800"
     : "bg-cream-50 text-earth-700 border border-earth-700/30 hover:bg-cream-100";
@@ -82,7 +82,7 @@ function CTA({ children, dark = true, as = "button", href, onClick }) {
     </span>
   );
   const base = `inline-flex items-center justify-center rounded-full px-6 py-3 text-sm tracking-wide transition-colors duration-300 ${cls}`;
-  if (as === "a") return <a href={href} className={base}>{inner}</a>;
+  if (as === "a") return <a href={href} target={target} rel={rel} className={base}>{inner}</a>;
   return <button type="button" onClick={onClick} className={base}>{inner}</button>;
 }
 
